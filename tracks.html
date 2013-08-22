@@ -1,0 +1,36 @@
+
+
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Nova tracks - {{ date.strftime('%Y-%m-%d') }}</title>
+    <link rel="stylesheet" href="http://blog.notmyidea.org/theme/css/wide.css" type="text/css" />
+</head>
+<body>
+<body id="index" class="home">
+        <header id="banner" class="body">
+            <h1><a href="#">Nova-{{ date.strftime('%Y-%m-%d') }}</a></h1>
+        <nav><ul><li>oh yeah</li></ul></nav>
+        </header><!-- /#banner -->
+
+    <section id="content" class="body">
+
+    <div id="lang-selector">
+    <a href='http://alexis.notmyidea.org/nova/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.mp3'>réécouter</a>
+    </div>
+
+    <ol id="posts-list" class="hfeed">
+        
+{% for track in tracks %}
+    <a id="{{ track.date.isoformat() }}" href="#{{ track.date.isoformat() }}">
+        <li><article class="hentry music">    
+            <span class='category music'>{{ track.date.strftime('%H:%M') }}</span>
+            <h1>{{ track.artist }}, {{ track.title }}</h1>
+        </article></li>
+    </a>
+{% endfor %}
+        </ol>
+        </section>
+</body>
+</html>

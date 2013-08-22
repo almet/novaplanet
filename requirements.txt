@@ -1,0 +1,5 @@
+Jinja2==2.7.1
+MarkupSafe==0.18
+cssselect==0.8
+lxml==3.2.3
+pyquery==1.2.4
