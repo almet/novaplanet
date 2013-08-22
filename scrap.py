@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 import codecs
 import datetime
+import os.path
+import sys
 import time
 from operator import attrgetter
 
 from pyquery import PyQuery as pq
 from jinja2 import Environment, FileSystemLoader
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 class Track(object):
@@ -63,21 +67,20 @@ class NovaScrapper(object):
                 self.tracks[ts] = Track(artist=artist, title=title, ts=ts)
 
 
-def render_tracks(date, tracks):
-    loader = FileSystemLoader('.')
+def render_tracks(date, tracks, output_path):
+    loader = FileSystemLoader(HERE)
     env = Environment(loader=loader)
     template = env.get_template('tracks.html')
     output = template.render(date=date, tracks=tracks)
 
     filename = '%s.html' % date.strftime('%Y-%m-%d')
+    full_path = os.path.join(output_path, filename)
 
-    with codecs.open(filename, 'w+', encoding='utf-8') as f:
+    with codecs.open(full_path, 'w+', encoding='utf-8') as f:
         f.write(output)
 
 
-def parse_nova_lanuit():
-
-    now = datetime.datetime.now()
+def parse_nova_lanuit(now):
     start = datetime.datetime(year=now.year, month=now.month,
                               day=now.day, hour=0, minute=00)
 
@@ -88,8 +91,11 @@ def parse_nova_lanuit():
 
     tracks = scrapper.tracks.values()
     tracks.sort(key=attrgetter('date'))
-
-    render_tracks(start, tracks)
+    return tracks
 
 if __name__ == '__main__':
-    parse_nova_lanuit()
+    output_path = sys.argv[1] if len(sys.argv) > 1 else '.'
+
+    now = datetime.datetime.now()
+    tracks = parse_nova_lanuit(now)
+    render_tracks(now, tracks, output_path)
