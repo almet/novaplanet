@@ -29,6 +29,9 @@ class NovaScrapper(object):
 
         # Alter start because the nova page will give us too much info
         # otherwise.
+        self.start = start
+        self.end = end
+
         start = start + datetime.timedelta(minutes=50)
         self.scrap_page(start)
 
@@ -64,7 +67,8 @@ class NovaScrapper(object):
             ts = ts_class.split('_')[-1]
 
             if ts not in self.tracks:
-                self.tracks[ts] = Track(artist=artist, title=title, ts=ts)
+                track = Track(artist=artist, title=title, ts=ts)
+                self.tracks[ts] = track
 
 
 def render_tracks(date, tracks, output_path):
@@ -80,22 +84,22 @@ def render_tracks(date, tracks, output_path):
         f.write(output)
 
 
-def parse_nova_lanuit(now):
-    start = datetime.datetime(year=now.year, month=now.month,
-                              day=now.day, hour=0, minute=00)
-
-    end = datetime.datetime(year=now.year, month=now.month, day=now.day,
-                            hour=6, minute=0)
+def parse_nova_lanuit(start, end):
 
     scrapper = NovaScrapper(start, end)
 
     tracks = scrapper.tracks.values()
     tracks.sort(key=attrgetter('date'))
-    return tracks
+    return [t for t in tracks if t.date > start and t.date < end]
 
 if __name__ == '__main__':
     output_path = sys.argv[1] if len(sys.argv) > 1 else '.'
 
     now = datetime.datetime.now()
-    tracks = parse_nova_lanuit(now)
-    render_tracks(now, tracks, output_path)
+    start = datetime.datetime(year=now.year, month=now.month,
+                              day=now.day, hour=0, minute=00)
+
+    end = datetime.datetime(year=now.year, month=now.month, day=now.day,
+                            hour=6, minute=0)
+    tracks = parse_nova_lanuit(start, end)
+    render_tracks(start, tracks, output_path)
