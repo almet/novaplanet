@@ -4,13 +4,6 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <title>Nova tracks - {{ date.strftime('%Y-%m-%d') }}</title>
     <link rel="stylesheet" href="http://blog.notmyidea.org/theme/css/wide.css" type="text/css" />
-    <script type="text/javascript" charset="utf-8">
-    function play(when){
-        var player = document.getElementById('player');
-        player.currentTime = when;
-        player.play();
-    };
-    </script>
 </head>
 <body>
 <body id="index" class="home">
@@ -22,14 +15,14 @@
     <section id="content" class="body">
 
     <div id="lang-selector">
-    <audio id="player" src='http://alexis.notmyidea.org/nova/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg' type='audio/vorbis' controls/>
+        <audio id="player" src='http://alexis.notmyidea.org/nova/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg' type='audio/vorbis' controls/>
     </div>
 
     <ol id="posts-list" class="hfeed">
     Mix du {{ date.strftime('%Y-%m-%d') }}
         
 {% for track in tracks %}
-<a id="{{ track.date.isoformat() }}" href="#{{ track.date.isoformat() }}" onClick="play({{ (track.date - date).seconds }});">
+<a id="{{ (track.date - date).seconds }}" href="#{{ (track.date - date).seconds }}" onClick="play({{ (track.date - date).seconds }});">
         <li><article class="hentry music">    
             <span class='category music'>{{ track.date.strftime('%H:%M') }}</span>
             <h1>{{ track.artist }}, {{ track.title }}</h1>
@@ -38,5 +31,51 @@
 {% endfor %}
         </ol>
         </section>
+
+    <script type="text/javascript" charset="utf-8">
+    player = document.getElementById('player');
+
+    function play(when){
+        player.currentTime = when;
+        player.play();
+    };
+    
+    var metadata = [];
+    {% for track in tracks %}
+    metadata.push({
+            artist: "{{ track.artist }}",
+            title: "{{ track.title }}",
+            startTime: {{ (track.date - date).seconds }}});
+    {% endfor %}
+
+    function findTrack(time){
+        for (var i in metadata){
+            var track = metadata[i];
+            if (track.startTime > time){
+                var currentTrack = i;
+                if(currentTrack > 0)
+                    currentTrack = currentTrack - 1;
+                return metadata[currentTrack];
+            }
+        }
+    }
+
+    function displayTrack(track){
+
+
+    }
+
+    lastCheck = 0;
+
+    player.ontimeupdate = function(){
+        var now = parseInt(player.currentTime);
+        if (now > lastCheck){
+            var track = findTrack(player.currentTime);
+            displayTrack(track);
+            console.log(track.artist, track.titlel);
+            lastCheck = now;
+        }
+    };
+    </script>
 </body>
 </html>

@@ -48,11 +48,7 @@ class NovaScrapper(object):
         return float(max(self.tracks.keys()))
 
     def scrap_page(self, date):
-        """Scrap a page, put the results in the self.collection attribute.
-
-        Return the latest timestamp it parsed (as in the most recent) so that
-        the scrapping can continue.
-        """
+        """Scrap a page, put the results in the self.tracks attribute."""
         timestamp = time.mktime(date.timetuple())
 
         d = pq(url=self.url % timestamp)
@@ -72,8 +68,15 @@ class NovaScrapper(object):
 
 
 def render_tracks(date, tracks, output_path):
-    loader = FileSystemLoader(HERE)
-    env = Environment(loader=loader)
+    """Render a list of tracks objects into an HTMl page using a Jinja
+    template.
+
+    :param date: the date of today, used to generate the filename of the
+                 output.
+    :param tracks: the list of tracks objects.
+    :param output_path: the path where to output the .html file.
+    """
+    env = Environment(loader=FileSystemLoader(HERE))
     template = env.get_template('tracks.html')
     output = template.render(date=date, tracks=tracks)
 
@@ -90,6 +93,7 @@ def parse_nova_lanuit(start, end):
 
     tracks = scrapper.tracks.values()
     tracks.sort(key=attrgetter('date'))
+    
     return [t for t in tracks if t.date > start and t.date < end]
 
 if __name__ == '__main__':
