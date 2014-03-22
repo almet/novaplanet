@@ -1,81 +1,85 @@
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<html lang="fr">
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Nova tracks - {{ date.strftime('%Y-%m-%d') }}</title>
-    <link rel="stylesheet" href="http://blog.notmyidea.org/theme/css/wide.css" type="text/css" />
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
 </head>
 <body>
-<body id="index" class="home">
-        <header id="banner" class="body">
-            <h1><a href="#">Nova la nuit</a></h1>
-        <nav><ul><li>oh yeah</li></ul></nav>
-        </header><!-- /#banner -->
+<div class="container">
+<h1><a href="#">Nova la nuit — Mix du {{ date.strftime('%Y-%m-%d') }}</a></h1>
+  <div>
+    <audio id="player" src='http://alexis.notmyidea.org/nova/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg' type='audio/vorbis' controls style="width: 100%"></audio>
+  </div>
+  <table class="table table-striped table-hover">
+  <thead><th>Temps</th><th>Artiste</th><th>Morceau</th></thead>
+  <tbody>
+  {% for track in tracks %}
+  <tr id="{{ (track.date - date).seconds }}"
+      onClick="play({{ (track.date - date).seconds }});">
+    <td>{{ track.date.strftime('%H:%M') }}</td>
+    <td>{{ track.artist }}</td>
+    <td>{{ track.title }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+  </table>
+  </div>
 
-    <section id="content" class="body">
+<script type="text/javascript" charset="utf-8">
+var player = document.getElementById('player');
 
-    <div id="lang-selector">
-        <audio id="player" src='http://alexis.notmyidea.org/nova/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg' type='audio/vorbis' controls/>
-    </div>
+function play(when){
+  player.currentTime = when;
+  player.play();
+  $('tr').removeClass('success');
+  $('#' + when).addClass('success');
+};
 
-    <ol id="posts-list" class="hfeed">
-    Mix du {{ date.strftime('%Y-%m-%d') }}
-        
+var metadata = [];
 {% for track in tracks %}
-<a id="{{ (track.date - date).seconds }}" href="#{{ (track.date - date).seconds }}" onClick="play({{ (track.date - date).seconds }});">
-        <li><article class="hentry music">    
-            <span class='category music'>{{ track.date.strftime('%H:%M') }}</span>
-            <h1>{{ track.artist }}, {{ track.title }}</h1>
-        </article></li>
-    </a>
+metadata.push({
+  artist: "{{ track.artist }}",
+  title: "{{ track.title }}",
+  startTime: {{ (track.date - date).seconds }}});
 {% endfor %}
-        </ol>
-        </section>
 
-    <script type="text/javascript" charset="utf-8">
-    player = document.getElementById('player');
-
-    function play(when){
-        player.currentTime = when;
-        player.play();
-    };
-    
-    var metadata = [];
-    {% for track in tracks %}
-    metadata.push({
-            artist: "{{ track.artist }}",
-            title: "{{ track.title }}",
-            startTime: {{ (track.date - date).seconds }}});
-    {% endfor %}
-
-    function findTrack(time){
-        for (var i in metadata){
-            var track = metadata[i];
-            if (track.startTime > time){
-                var currentTrack = i;
-                if(currentTrack > 0)
-                    currentTrack = currentTrack - 1;
-                return metadata[currentTrack];
-            }
-        }
+function findTrack(time){
+  for (var i in metadata){
+    var track = metadata[i];
+    if (track.startTime > time){
+      var currentTrack = i;
+      if(currentTrack > 0){
+        currentTrack = currentTrack - 1;
+      }
+      return {
+        current: metadata[currentTrack],
+        previous: metadata[currentTrack -1]
+      }
     }
+  }
+}
 
-    function displayTrack(track){
+function displayTrack(track){
+  console.log(track.current.artist, track.current.title);
+  $('tr').removeClass('success');
+  $('#' + track.current.startTime).addClass('success');
+}
 
+lastCheck = 0;
 
-    }
-
-    lastCheck = 0;
-
-    player.ontimeupdate = function(){
-        var now = parseInt(player.currentTime);
-        if (now > lastCheck){
-            var track = findTrack(player.currentTime);
-            displayTrack(track);
-            console.log(track.artist, track.titlel);
-            lastCheck = now;
-        }
-    };
-    </script>
+player.ontimeupdate = function(){
+  var now = parseInt(player.currentTime);
+  if (now > lastCheck){
+    var tracks = findTrack(player.currentTime);
+    displayTrack(tracks);
+    lastCheck = now;
+  }
+};
+</script>
 </body>
 </html>
