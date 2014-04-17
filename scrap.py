@@ -14,8 +14,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 class Track(object):
     def __init__(self, artist, title, ts):
-        self.artist = artist
-        self.title = title
+        self.artist = artist.replace('"', "'")
+        self.title = title.replace('"', "'")
         self.date = datetime.datetime.fromtimestamp(float(ts))
         self.ts = ts
 

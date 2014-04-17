@@ -3,17 +3,23 @@
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Nova tracks - {{ date.strftime('%Y-%m-%d') }}</title>
-    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
-    <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-    <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
+    <title>{{ date.strftime('%Y-%m-%d') }}</title>
+    <link rel="stylesheet" href="assets/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/bootstrap-theme.min.css">
+    <script src="assets/bootstrap.min.js"></script>
+    <script src="assets/jquery-2.1.0.min.js"></script>
 </head>
 <body>
 <div class="container">
-<h1><a href="#">Nova la nuit — Mix du {{ date.strftime('%Y-%m-%d') }}</a></h1>
+  <h1><a href="#">{{ date.strftime('%Y-%m-%d') }}</a></h1>
   <div>
-    <audio id="player" src='http://alexis.notmyidea.org/nova/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg' type='audio/vorbis' controls style="width: 100%"></audio>
+    <audio
+        id="player" src='http://alexis.notmyidea.org/nova/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg'
+        type='audio/vorbis'
+        controls style="width: 100%"
+        mozaudiochannel="content"
+        preload="auto">
+    </audio>
   </div>
   <table class="table table-striped table-hover">
   <thead><th>Temps</th><th>Artiste</th><th>Morceau</th></thead>
@@ -80,6 +86,16 @@ player.ontimeupdate = function(){
     lastCheck = now;
   }
 };
+function installApp() {
+  var manifestUrl = 'http://alexis.notmyidea.org/nova/package.manifest';
+  var req = navigator.mozApps.installPackage(manifestUrl);
+  req.onsuccess = function() {
+    alert(this.result.origin);
+  };
+  req.onerror = function() {
+    alert(this.error.name);
+  };
+}
 </script>
 </body>
 </html>
