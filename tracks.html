@@ -71,7 +71,6 @@ function findTrack(time){
 }
 
 function displayTrack(track){
-  console.log(track.current.artist, track.current.title);
   $('tr').removeClass('success');
   $('#' + track.current.startTime).addClass('success');
 }
