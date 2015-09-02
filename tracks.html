@@ -22,7 +22,7 @@
     </audio>
   </div>
   <table class="table table-striped table-hover">
-  <thead><th>Temps</th><th>Artiste</th><th>Morceau</th></thead>
+    <thead><th>Temps</th><th>Artiste</th><th>Morceau</th><th>Lien</th></thead>
   <tbody>
   {% for track in tracks %}
   <tr id="{{ (track.date - date).seconds }}"
@@ -30,6 +30,7 @@
     <td>{{ track.date.strftime('%H:%M') }}</td>
     <td>{{ track.artist }}</td>
     <td>{{ track.title }}</td>
+    <td><a href='http://alexis.notmyidea.org/nova/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg#t={{ (track.date - date).seconds }}'>🔗</a></td>
   </tr>
   {% endfor %}
   </tbody>
