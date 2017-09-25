@@ -86,16 +86,6 @@ player.ontimeupdate = function(){
     lastCheck = now;
   }
 };
-function installApp() {
-  var manifestUrl = 'http://alexis.notmyidea.org/nova/package.manifest';
-  var req = navigator.mozApps.installPackage(manifestUrl);
-  req.onsuccess = function() {
-    alert(this.result.origin);
-  };
-  req.onerror = function() {
-    alert(this.error.name);
-  };
-}
 </script>
 </body>
 </html>
