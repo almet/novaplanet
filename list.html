@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nova la nuit</title>
+    <link rel="stylesheet" href="assets/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/bootstrap-theme.min.css">
+    <script src="assets/bootstrap.min.js"></script>
+    <script src="assets/jquery-2.1.0.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <h1><a href="#">Nova la nuit</a></h1>
+
+  <table class="table table-striped table-hover">
+    <thead><th>Date</th></thead>
+  <tbody id="playlists">
+  </tbody>
+  </table>
+  <template id="playlist-tpl">
+  <tr>
+    <td> <a href="#"><span class='linkName'></span></a></td>
+  </tr>
+  </template>
+</div>
+
+<script type="text/javascript" charset="utf-8">
+
+// From https://stackoverflow.com/questions/4413590/javascript-get-array-of-dates-between-2-dates
+Date.prototype.addDays = function(days) {
+    var date = new Date(this.valueOf())
+    date.setDate(date.getDate() + days);
+    return date;
+}
+
+function getDates(startDate, stopDate) {
+    var dateArray = new Array();
+    var currentDate = startDate;
+    while (currentDate <= stopDate) {
+        dateArray.push(new Date (currentDate));
+        currentDate = currentDate.addDays(1);
+    }
+    return dateArray;
+}
+
+function renderPlaylist(playlist) {
+  var tpl = document.getElementById('playlist-tpl');
+  var td = tpl.content.cloneNode(true);
+  td.querySelector('.linkName').textContent = playlist.title;
+  td.querySelector('a').href = playlist.link;
+  return td;
+}
+
+function renderPlaylists(playlists) {
+  var table = document.getElementById("playlists");
+    table.innerHTML = "";
+    playlists.forEach(function(playlist) {
+      table.appendChild(renderPlaylist(playlist));
+    });
+}
+
+function render() {
+
+  var dates = getDates(new Date('2013-08-20'), new Date('2017-09-25'));
+  dates.reverse(); // We want the most recent first.
+  renderPlaylists(dates.map(function(d) {
+   var partDate = d.toJSON().split('T')[0];
+   var htmlPage = `https://nova.notmyidea.org/${partDate}.html`;
+
+   return {
+     title: d.toLocaleDateString('fr-FR', {year: "numeric", month: "long", day: "numeric"}),
+     link: htmlPage
+   }
+  }));
+}
+
+window.addEventListener("DOMContentLoaded", render);
+</script>
+</body>
+</html>
