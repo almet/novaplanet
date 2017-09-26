@@ -14,7 +14,7 @@
   <h1><a href="#">{{ date.strftime('%Y-%m-%d') }}</a></h1>
   <div>
     <audio
-        id="player" src='http://alexis.notmyidea.org/nova/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg'
+        id="player" src='https://nova.notmyidea.org/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg'
         type='audio/vorbis'
         controls style="width: 100%"
         mozaudiochannel="content"
@@ -30,7 +30,7 @@
     <td>{{ track.date.strftime('%H:%M') }}</td>
     <td>{{ track.artist }}</td>
     <td>{{ track.title }}</td>
-    <td><a href='http://alexis.notmyidea.org/nova/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg#t={{ (track.date - date).seconds }}'>🔗</a></td>
+    <td><a href='https://nova.notmyidea.org/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg#t={{ (track.date - date).seconds }}'>🔗</a></td>
   </tr>
   {% endfor %}
   </tbody>
@@ -52,6 +52,7 @@ var metadata = [];
 metadata.push({
   artist: "{{ track.artist }}",
   title: "{{ track.title }}",
+  picture: "{{ track.picture }}",
   startTime: {{ (track.date - date).seconds }}});
 {% endfor %}
 

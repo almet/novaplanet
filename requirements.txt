@@ -2,3 +2,4 @@ Jinja2==2.7.1
 MarkupSafe==0.18
 cssselect==0.8
 pyquery==1.2.4
+requests

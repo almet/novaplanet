@@ -39,7 +39,7 @@ Date.prototype.addDays = function(days) {
 $(function() {
     $('#calendar').calendar({
         language: 'fr',
-        maxDate: new Date('2017-09-21'),
+        maxDate: new Date('{{ date.isoformat() }}'),
         minDate: new Date('2013-08-20'),
         style: 'border',
     });
