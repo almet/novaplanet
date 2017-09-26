@@ -23,3 +23,6 @@ serve: install
 
 clean:
 	rm -rf .venv
+
+generate: $(INSTALL_STAMP)
+	$(PYTHON) scrap.py output

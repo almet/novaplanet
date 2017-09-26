@@ -38,9 +38,16 @@ class NovaScrapper(object):
         start = start + datetime.timedelta(minutes=50)
         self.scrap_page(start)
 
+        tries = 0
         while self.max_date < end:
             start = self.max_date + datetime.timedelta(minutes=50)
+            old_count = len(self.tracks)
             self.scrap_page(start)
+            if old_count == len(self.tracks):
+                tries = tries + 1
+            if tries >= 3:
+                break
+
 
     @property
     def max_date(self):
@@ -67,7 +74,7 @@ class NovaScrapper(object):
             'hour': date.hour,
             'minutes': date.minute
         })
-        print('#')
+        print('#', end='', flush=True)
         d = pq(resp.text)
         for item in d.find('.square-item>a').items():
             artist = item('.title>.name').text().capitalize()
@@ -86,7 +93,7 @@ class NovaScrapper(object):
             ts = time.mktime(title_datetime.timetuple())
 
             if ts not in self.tracks:
-                print('.')
+                print('.', end='', flush=True)
                 track = Track(artist=artist, title=title, ts=ts, picture=picture)
                 self.tracks[ts] = track
 
@@ -128,7 +135,7 @@ def parse_nova_lanuit(start, end):
 if __name__ == '__main__':
     output_path = sys.argv[1] if len(sys.argv) > 1 else '.'
 
-    now = datetime.datetime.now() - datetime.timedelta(days=10)
+    now = datetime.datetime.now()  # - datetime.timedelta(days=10)
     start = datetime.datetime(year=now.year, month=now.month,
                               day=now.day, hour=0, minute=00)
 
