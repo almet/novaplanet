@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
+import argparse
 import codecs
 import datetime
 import os.path
-import sys
 import shutil
 import time
 
@@ -30,9 +30,9 @@ class NovaScrapper(object):
 
     url = 'http://www.nova.fr/radionova/radio-nova'
 
-    def __init__(self, start, end, offset=None):
+    def __init__(self, start, end, delay=None):
         self.tracks = {}  # Let's store data indexed by their timestamp
-        self.offset = offset
+        self.delay = delay
 
         # Alter start because the nova page will give us too much info
         # otherwise.
@@ -95,8 +95,8 @@ class NovaScrapper(object):
                 hour=hour,
                 minute=minute)
 
-            if self.offset:
-                title_datetime = title_datetime + self.offset
+            if self.delay:
+                title_datetime = title_datetime + self.delay
 
             ts = time.mktime(title_datetime.timetuple())
             links = {link.get('class').split('-')[1]: link.get('href')
@@ -118,11 +118,11 @@ def render_tracks(date, tracks, output_path):
     :param output_path: the path where to output the .html file.
     """
     filename = '%s.html' % date.strftime('%Y-%m-%d')
-    render_template('tracks.html', filename, date=date, tracks=tracks)
-    render_template('index.html', 'index.html', date=date)
+    render_template(output_path, 'tracks.html', filename, date=date, tracks=tracks)
+    render_template(output_path, 'index.html', 'index.html', date=date)
 
 
-def render_template(tpl_name, filename, **options):
+def render_template(output_path, tpl_name, filename, **options):
     env = Environment(loader=FileSystemLoader(THEME_PATH))
     template = env.get_template(tpl_name)
     output = template.render(**options)
@@ -186,11 +186,11 @@ def download(url, output_path):
     return filename
 
 
-def parse_nova_lanuit(start, end):
+def parse_nova_lanuit(start, end, delay):
     print('Night of the %s' % start.isoformat())
     print('Scrapping nova website for track names', end='', flush=True)
-    offset = datetime.timedelta(minutes=3)
-    scrapper = NovaScrapper(start, end, offset)
+    delay = datetime.timedelta(minutes=int(delay))
+    scrapper = NovaScrapper(start, end, delay)
     tracks = list(scrapper.tracks.values())
     tracks.sort(key=attrgetter('date'))
 
@@ -205,13 +205,13 @@ def download_pictures(tracks, output_path):
         print('.', end='', flush=True)
 
 
-def generate_archive(day, output_path):
+def generate_archive(day, output_path, delay):
     start = datetime.datetime(year=day.year, month=day.month,
                               day=day.day, hour=0, minute=00)
 
     end = datetime.datetime(year=day.year, month=day.month, day=day.day,
                             hour=6, minute=0)
-    tracks = parse_nova_lanuit(start, end)
+    tracks = parse_nova_lanuit(start, end, delay)
     download_pictures(tracks, output_path)
     render_tracks(start, tracks, output_path)
 
@@ -221,10 +221,46 @@ def copy_assets(output_path):
     copy(os.path.join(THEME_PATH, 'assets'), os.path.join(output_path, 'assets'))
 
 
-if __name__ == '__main__':
-    output_path = sys.argv[1] if len(sys.argv) > 1 else '.'
+def parse_args():
+    def valid_date(s):
+        try:
+            return datetime.datetime.strptime(s, "%Y-%m-%d")
+        except ValueError:
+            msg = "Not a valid date: '{0}'.".format(s)
+            raise argparse.ArgumentTypeError(msg)
 
-    now = datetime.datetime.now()  # - datetime.timedelta(days=11)
-    generate_archive(now, output_path)
-    copy_assets(output_path)
+    parser = argparse.ArgumentParser(description='Generate nova archive pages.')
+    parser.add_argument('--output', dest='output_path',
+                        default='output',
+                        help='Path where to output the generated files')
+    parser.add_argument('--delay', type=int, dest='delay',
+                        default=3,
+                        help='Delay between the .ogg file and the nova website')
+
+    parser.add_argument('--start-date', type=valid_date, dest='start_date',
+                        default=datetime.date.today(),
+                        help='Date to create the archive for. If not specified, '
+                             'current day will be used')
+
+    parser.add_argument('--end-date', type=valid_date,
+                        default=None,
+                        help='If specified, all dates between start-date and '
+                             'end-date will be scrapped')
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    if args.end_date:
+        delta = args.end_date - args.start_date
+        for i in range(delta.days + 1):
+            generate_archive(
+                args.start_date + datetime.timedelta(days=i),
+                args.output_path,
+                args.delay,
+            )
+            print('')
+    else:
+        generate_archive(args.start_date, args.output_path, args.delay)
+    copy_assets(args.output_path)
     print('')
