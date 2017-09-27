@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ date.strftime('%Y-%m-%d') }}</title>
+    <link rel="stylesheet" href="assets/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="assets/nova.css">
+    <script src="assets/jquery-2.1.0.min.js"></script>
+    <script src="assets/bootstrap.min.js"></script>
+    <style src=>
+
+
+    </style>
+</head>
+<body>
+<div class="container">
+  <h1><a href="#">Nova la nuit - Mix du {{ date.strftime('%Y-%m-%d') }}</a></h1>
+  <div class="row" data-spy="affix" data-offset-top="60">
+      <div class="col-xs-6 col-md-4"><p id="description">yeah</p></div>
+      <div class="col-xs-12 col-sm-6 col-md-8">
+          <audio
+          id="player" src='https://nova.notmyidea.org/nova-lanuit-{{ date.strftime('%Y-%m-%d') }}.ogg'
+          type='audio/vorbis'
+          controls style="width: 100%"
+          mozaudiochannel="content"
+          preload="auto">
+      </audio>
+      </div>
+
+  </div>
+
+<section class="section-cqct section-speciale">
+<div class="row">
+  {% for track in tracks %}
+    <div id="{{ (track.date - date).seconds }}"
+        onClick="play({{ (track.date - date).seconds }});"
+        class="square-item col-xs-6 col-sm-4 col-md-3 fadeIn">
+        <a>
+            <picture>
+                <!--[if IE 9]><video style="display: none;"><![endif]-->
+                <source srcset="{{ track.picture }}" media="(min-width: 1200px)">
+                <source srcset="{{ track.picture }}" media="(min-width: 992px)">
+                <source srcset="{{ track.picture }}" media="(min-width: 768px)">
+                <source srcset="{{ track.picture }}" media="(max-width: 767px)">
+                <!--[if IE 9]></video><![endif]--><img src="{{ track.picture }}" srcset="{{ track.picture }}" alt="">
+                    </picture>
+            <time datetime="2012-02-11T16:24:02" class="time">🕐 {{ track.date.strftime('%H:%M') }}</time>
+            <div class="title">
+                <div class="name">{{ track.artist }}</div>
+                <div class="description">{{ track.title }}</div>
+            </div>
+        </a>
+        <div class="overlay-social">
+            <ul>
+                 {% for service, href in track.links.items() %}
+                 <li><a href="{{ href }}" target="blank" class="socicon-{{ service }}"></a></li>
+                 {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+</section>
+</div>
+
+<script type="text/javascript" charset="utf-8">
+var player = document.getElementById('player');
+
+function play(when){
+  player.currentTime = when;
+  player.play();
+  $('.square-item').removeClass('currently-playing');
+  $('#' + when).addClass('currently-playing');
+};
+
+var metadata = [];
+{% for track in tracks %}
+metadata.push({
+  artist: "{{ track.artist }}",
+  title: "{{ track.title }}",
+  picture: "{{ track.picture }}",
+  startTime: {{ (track.date - date).seconds }}});
+{% endfor %}
+
+function findTrack(time){
+  for (var i in metadata){
+    var track = metadata[i];
+    if (track.startTime > time){
+      var currentTrack = i;
+      if(currentTrack > 0){
+        currentTrack = currentTrack - 1;
+      }
+      return {
+        current: metadata[currentTrack],
+        previous: metadata[currentTrack -1]
+      }
+    }
+  }
+}
+
+function displayTrack(track){
+  $('.square-item').removeClass('currently-playing');
+  $('#' + track.current.startTime).addClass('currently-playing');
+  $('#description').text(track.current.artist + " - " + track.current.title);
+}
+
+lastCheck = 0;
+
+player.ontimeupdate = function(){
+  var now = parseInt(player.currentTime);
+  if (now > lastCheck){
+    var tracks = findTrack(player.currentTime);
+    displayTrack(tracks);
+    lastCheck = now;
+  }
+};
+</script>
+</body>
+</html>

@@ -3,32 +3,36 @@ import codecs
 import datetime
 import os.path
 import sys
+import shutil
 import time
+
 from operator import attrgetter
 from urllib.parse import urljoin
 
-from pyquery import PyQuery as pq
-from jinja2 import Environment, FileSystemLoader
 import requests
+from jinja2 import Environment, FileSystemLoader
+from pyquery import PyQuery as pq
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+THEME_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'theme')
 
 
 class Track(object):
-    def __init__(self, artist, title, ts, picture):
+    def __init__(self, artist, title, ts, picture, links):
         self.artist = artist.replace('"', "'")
         self.title = title.replace('"', "'")
         self.date = datetime.datetime.fromtimestamp(float(ts))
         self.ts = ts
         self.picture = picture
+        self.links = links
 
 
 class NovaScrapper(object):
 
     url = 'http://www.nova.fr/radionova/radio-nova'
 
-    def __init__(self, start, end):
+    def __init__(self, start, end, offset=None):
         self.tracks = {}  # Let's store data indexed by their timestamp
+        self.offset = offset
 
         # Alter start because the nova page will give us too much info
         # otherwise.
@@ -47,7 +51,7 @@ class NovaScrapper(object):
                 tries = tries + 1
             if tries >= 3:
                 break
-
+        print("!")
 
     @property
     def max_date(self):
@@ -90,11 +94,17 @@ class NovaScrapper(object):
                 day=date.day,
                 hour=hour,
                 minute=minute)
-            ts = time.mktime(title_datetime.timetuple())
 
+            if self.offset:
+                title_datetime = title_datetime + self.offset
+
+            ts = time.mktime(title_datetime.timetuple())
+            links = {link.get('class').split('-')[1]: link.get('href')
+                     for link in item.siblings()('a')}
             if ts not in self.tracks:
                 print('.', end='', flush=True)
-                track = Track(artist=artist, title=title, ts=ts, picture=picture)
+                track = Track(artist=artist, title=title, ts=ts, picture=picture,
+                              links=links)
                 self.tracks[ts] = track
 
 
@@ -113,7 +123,7 @@ def render_tracks(date, tracks, output_path):
 
 
 def render_template(tpl_name, filename, **options):
-    env = Environment(loader=FileSystemLoader(HERE))
+    env = Environment(loader=FileSystemLoader(THEME_PATH))
     template = env.get_template(tpl_name)
     output = template.render(**options)
 
@@ -123,23 +133,99 @@ def render_template(tpl_name, filename, **options):
         f.write(output)
 
 
+def copy(source, destination):
+    """Recursively copy source into destination.
+
+    Taken from pelican.
+
+    If source is a file, destination has to be a file as well.
+    The function is able to copy either files or directories.
+    :param source: the source file or directory
+    :param destination: the destination file or directory
+    """
+    source_ = os.path.abspath(os.path.expanduser(source))
+    destination_ = os.path.abspath(os.path.expanduser(destination))
+
+    if os.path.isfile(source_):
+        dst_dir = os.path.dirname(destination_)
+        if not os.path.exists(dst_dir):
+            os.makedirs(dst_dir)
+        shutil.copy2(source_, destination_)
+
+    elif os.path.isdir(source_):
+        if not os.path.exists(destination_):
+            os.makedirs(destination_)
+        if not os.path.isdir(destination_):
+            return
+
+        for src_dir, subdirs, others in os.walk(source_):
+            dst_dir = os.path.join(destination_,
+                                   os.path.relpath(src_dir, source_))
+
+            if not os.path.isdir(dst_dir):
+                # Parent directories are known to exist, so 'mkdir' suffices.
+                os.mkdir(dst_dir)
+
+            for o in others:
+                src_path = os.path.join(src_dir, o)
+                dst_path = os.path.join(dst_dir, o)
+                if os.path.isfile(src_path):
+                    shutil.copy2(src_path, dst_path)
+
+
+def download(url, output_path):
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    filename = url.split('/')[-1]
+    return filename # #
+    resp = requests.get(url, stream=True)
+    if resp.status_code == 200:
+        file_path = os.path.join(output_path, filename)
+        with open(file_path, 'wb') as f:
+            resp.raw.decode_content = True
+            shutil.copyfileobj(resp.raw, f)
+    return filename
+
+
 def parse_nova_lanuit(start, end):
-
-    scrapper = NovaScrapper(start, end)
-
+    print('Night of the %s' % start.isoformat())
+    print('Scrapping nova website for track names', end='', flush=True)
+    offset = datetime.timedelta(minutes=3)
+    scrapper = NovaScrapper(start, end, offset)
     tracks = list(scrapper.tracks.values())
     tracks.sort(key=attrgetter('date'))
 
     return [t for t in tracks if t.date > start and t.date < end]
 
+
+def download_pictures(tracks, output_path):
+    print('Downloading pictures', end='', flush=True)
+    for track in tracks:
+        new_url = download(track.picture, os.path.join(output_path, 'pictures'))
+        track.picture = 'pictures/%s' % new_url
+        print('.', end='', flush=True)
+
+
+def generate_archive(day, output_path):
+    start = datetime.datetime(year=day.year, month=day.month,
+                              day=day.day, hour=0, minute=00)
+
+    end = datetime.datetime(year=day.year, month=day.month, day=day.day,
+                            hour=6, minute=0)
+    tracks = parse_nova_lanuit(start, end)
+    download_pictures(tracks, output_path)
+    render_tracks(start, tracks, output_path)
+
+
+def copy_assets(output_path):
+    copy(os.path.join(THEME_PATH, 'fonts'), os.path.join(output_path, 'fonts'))
+    copy(os.path.join(THEME_PATH, 'assets'), os.path.join(output_path, 'assets'))
+
+
 if __name__ == '__main__':
     output_path = sys.argv[1] if len(sys.argv) > 1 else '.'
 
-    now = datetime.datetime.now()  # - datetime.timedelta(days=10)
-    start = datetime.datetime(year=now.year, month=now.month,
-                              day=now.day, hour=0, minute=00)
-
-    end = datetime.datetime(year=now.year, month=now.month, day=now.day,
-                            hour=6, minute=0)
-    tracks = parse_nova_lanuit(start, end)
-    render_tracks(start, tracks, output_path)
+    now = datetime.datetime.now()   - datetime.timedelta(days=11)
+    generate_archive(now, output_path)
+    copy_assets(output_path)
+    print('')
