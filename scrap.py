@@ -177,7 +177,6 @@ def download(url, output_path):
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     filename = url.split('/')[-1]
-    return filename # #
     resp = requests.get(url, stream=True)
     if resp.status_code == 200:
         file_path = os.path.join(output_path, filename)
@@ -225,7 +224,7 @@ def copy_assets(output_path):
 if __name__ == '__main__':
     output_path = sys.argv[1] if len(sys.argv) > 1 else '.'
 
-    now = datetime.datetime.now()   - datetime.timedelta(days=11)
+    now = datetime.datetime.now()  # - datetime.timedelta(days=11)
     generate_archive(now, output_path)
     copy_assets(output_path)
     print('')
