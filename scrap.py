@@ -2,7 +2,9 @@
 import argparse
 import codecs
 import datetime
+import mimetypes
 import os.path
+import re
 import shutil
 import time
 
@@ -222,15 +224,33 @@ def copy_assets(output_path):
     copy(os.path.join(THEME_PATH, 'assets'), os.path.join(output_path, 'assets'))
 
 
+# We are forced to subclass podcats because some paths are hardcoded.
+class Podcast(podcats.Channel):
+    def __init__(self, url, output_path, title):
+        super(Podcast, self).__init__(
+            root_dir=output_path,
+            root_url=url,
+            host=None,
+            port=443,
+            title=title,
+            link=None,
+        )
+
+    def __iter__(self):
+        for root, _, files in os.walk(self.root_dir):
+            relative_dir = root[len(self.root_dir) + 1:]
+            for fn in files:
+                filepath = os.path.join(root, fn)
+                mimetype = mimetypes.guess_type(filepath)[0]
+                if mimetype and 'audio' in mimetype:
+                    path = '/' + relative_dir + '/' + fn
+                    path = re.sub(r'//', '/', path)
+                    url = self.root_url + path
+                    yield podcats.Episode(filepath, url)
+
+
 def generate_podcast(url, output_path):
-    podcast = podcats.Channel(
-        root_dir=output_path,
-        root_url=url,
-        host=None,
-        port=443,
-        title='Nova la nuit',
-        link=None,
-    )
+    podcast = Podcast(url, output_path, 'Nova la nuit')
 
     full_path = os.path.join(output_path, 'podcast.xml')
     with codecs.open(full_path, 'w+', encoding='utf-8') as f:
