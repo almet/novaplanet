@@ -9,6 +9,7 @@ import time
 from operator import attrgetter
 from urllib.parse import urljoin
 
+import podcats
 import requests
 from jinja2 import Environment, FileSystemLoader
 from pyquery import PyQuery as pq
@@ -221,6 +222,21 @@ def copy_assets(output_path):
     copy(os.path.join(THEME_PATH, 'assets'), os.path.join(output_path, 'assets'))
 
 
+def generate_podcast(url, output_path):
+    podcast = podcats.Channel(
+        root_dir=output_path,
+        root_url=url,
+        host=None,
+        port=443,
+        title='Nova la nuit',
+        link=None,
+    )
+
+    full_path = os.path.join(output_path, 'podcast.xml')
+    with codecs.open(full_path, 'w+', encoding='utf-8') as f:
+        f.write(podcast.as_xml())
+
+
 def parse_args():
     def valid_date(s):
         try:
@@ -246,6 +262,9 @@ def parse_args():
                         default=None,
                         help='If specified, all dates between start-date and '
                              'end-date will be scrapped')
+    parser.add_argument('--url', dest='url',
+                        default='https://nova.notmyidea.org',
+                        help='URL of the served files')
     return parser.parse_args()
 
 
@@ -263,4 +282,5 @@ if __name__ == '__main__':
     else:
         generate_archive(args.start_date, args.output_path, args.delay)
     copy_assets(args.output_path)
+    generate_podcast(args.url, args.output_path)
     print('')

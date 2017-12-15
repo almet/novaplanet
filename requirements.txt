@@ -3,3 +3,4 @@ MarkupSafe==0.18
 cssselect==0.8
 pyquery==1.2.4
 requests
+podcats

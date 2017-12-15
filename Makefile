@@ -25,4 +25,4 @@ clean:
 	rm -rf .venv
 
 generate: $(INSTALL_STAMP)
-	$(PYTHON) scrap.py output
+	$(PYTHON) scrap.py --output output
